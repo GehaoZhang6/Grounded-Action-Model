@@ -17,8 +17,8 @@
   <sup>3</sup>National University of Singapore &nbsp; <sup>4</sup>Microsoft
 </p>
 
-<!-- DEMO VIDEO: drag assets/demo.mp4 into this spot in the GitHub web editor; it becomes a
-     https://github.com/user-attachments/assets/... link that GitHub renders as a video player. -->
+
+https://github.com/user-attachments/assets/78dd3f06-45af-4ca0-a8b6-9a7492162b56
 
 
 <p align="center">
