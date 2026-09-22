@@ -10,8 +10,8 @@
   Weikai Huang<sup>2</sup> ·
   Shailesh Shailesh<sup>3</sup> ·
   Yiyan Peng<sup>1</sup> ·
-  Jiafei Duan<sup>3</sup> ·
-  Ranjay Krishna<sup>2,4</sup>
+  <a href="https://jiafei1224.github.io/">Jiafei Duan</a><sup>3</sup> ·
+  <a href="https://ranjaykrishna.com/index.html">Ranjay Krishna</a><sup>2,4</sup>
   <br>
   <sup>1</sup>Northwestern University &nbsp; <sup>2</sup>University of Washington &nbsp;
   <sup>3</sup>National University of Singapore &nbsp; <sup>4</sup>Microsoft
