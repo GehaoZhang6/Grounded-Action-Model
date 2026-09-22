@@ -17,9 +17,7 @@
   <sup>3</sup>National University of Singapore &nbsp; <sup>4</sup>Microsoft
 </p>
 
-<p align="center">
-  <a href="https://grounded-action-model.github.io/"><img src="assets/demo.webp" width="100%" alt="GAM on real robots, in distribution and under visual shift"></a>
-</p>
+<video src="https://github.com/GehaoZhang6/Grounded-Action-Model/raw/main/assets/demo.mp4" width="100%" controls autoplay muted loop playsinline></video>
 
 <p align="center">
   <img src="assets/teaser.webp" width="100%" alt="A language instruction, a 2D point or a 2D box is resolved by a pretrained 3D grounding model into image tokens and detection tokens for action prediction.">
