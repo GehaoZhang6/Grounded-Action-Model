@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  Gehao Zhang<sup>1</sup> ·
+  <a href="https://gehaozhang6.github.io/">Gehao Zhang</a><sup>1</sup> ·
   Weikai Huang<sup>2</sup> ·
   Shailesh Shailesh<sup>3</sup> ·
   Yiyan Peng<sup>1</sup> ·
