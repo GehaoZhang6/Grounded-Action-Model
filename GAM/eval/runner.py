@@ -51,6 +51,8 @@ class GAMRunner:
             f"config has {len(self.slots)} slots, checkpoint expects {self.policy.encoder.n_slots}"
         self.prompts = slot_prompts(self.slots)
         self.slots_auto = bool(cfg["data"].get("slots_auto")); self.head = None   # slots: auto -> the span head names the prompts per episode
+        from GAM.text.instruction_prompts import build_instruction_prompts
+        self.iprompts = build_instruction_prompts(cfg)               # data.prompts_from_instruction: object names parsed from the instruction
         self.n_pts = int(pc.get("n_points", 512)); self.geom_src = pc.get("geometry_source", "box2d_depth")
         self.pred_depth = pc["geometry_depth"] == "pred"
         self.text_min = float(pc.get("text_score_min", 0.3))
@@ -80,6 +82,10 @@ class GAMRunner:
             self.prompts = names + [None] * (len(self.slots) - len(names))
             if instruction:
                 print(f"[runner] {instruction!r} -> prompts {names}", flush=True)
+        if self.iprompts is not None:
+            self.prompts = self.iprompts(instruction, self.slots, slot_prompts(self.slots))
+            if instruction:
+                print(f"[runner] {instruction!r} -> prompts {self.prompts}", flush=True)
         self.tracker = None; self.tk_slots = []; self.last_pts = {}   # text+track state of the episode
         self.lang = None
         if getattr(self.policy, "lang_film", False):

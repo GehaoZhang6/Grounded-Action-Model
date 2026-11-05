@@ -86,7 +86,7 @@ action chunks from those grounded observations, the robot's own silhouette and i
 
 | Benchmark | Checkpoint | Trained on |
 |---|---|---|
-| RoboTwin 2.0 | [`gam-robotwin`](https://huggingface.co/gehaozhang/gam-robotwin) | 50 clean demonstrations per task (one expert per task) + the RoboTwin-tuned detector and training caches; task checkpoints still being released |
+| RoboTwin 2.0 | [`gam-robotwin`](https://huggingface.co/gehaozhang/gam-robotwin) | 50 clean demonstrations per task (one expert per task) + the RoboTwin-tuned detector and training caches, all 50 tasks |
 | LIBERO-PRO | [`gam-libero-pro`](https://huggingface.co/gehaozhang/gam-libero-pro) | all four LIBERO suites, 50 demonstrations per task (one policy) + the LIBERO-tuned detector, span head and training cache |
 | Your own dataset | [`gam-wilddet3d`](https://huggingface.co/gehaozhang/gam-wilddet3d) | the general WildDet3D detector and the universal span head |
 
@@ -105,8 +105,8 @@ Linux x86_64, Python 3.11, CUDA 12.6 / 12.8 / 13.0 (torch 2.13). Measured on one
 | Training, LIBERO-PRO | 9 GB | batch 64 per GPU |
 | End-to-end training | training + ~5 GB | the detector stays resident; ~0.6-1 s per sample |
 
-The released checkpoints were trained on 8 GPUs (LIBERO-PRO, global batch 512) and 4 GPUs (RoboTwin, global
-batch 192). On a single 24 GB card use `--batch-size 16` and raise `--grad-accum` to keep the global batch
+The released checkpoints were trained on 8 GPUs (LIBERO-PRO, global batch 512) and 4 GPUs or 1 GPU with `grad_accum: 4` (RoboTwin,
+global batch 192). On a single 24 GB card use `--batch-size 16` and raise `--grad-accum` to keep the global batch
 (12 for RoboTwin, 8 for LIBERO-PRO at batch 64).
 
 ## 🔧 Installation
@@ -188,6 +188,17 @@ export ROBOTWIN_DATA=$ROBOTWIN_ROOT/data                                      # 
 python benchmarks/robotwin/prepare_data.py --data $ROBOTWIN_DATA              # -> $ROBOTWIN_DATA/frames_keep.json
 python -m GAM.precompute --config configs/robotwin/shake_bottle.yaml
 ```
+
+Every RoboTwin 2.0 task has a config in `configs/robotwin/` (50 tasks). Each comes with a released checkpoint and
+cache; to train your own, collect, prepare, precompute and train as above. Each slot is found by a text
+prompt made from its name (`bowl1` / `bowl2` become "left bowl" / "right bowl", `target_box` becomes "target box"), with
+three conventions for the tasks that need them:
+
+| slots | meaning |
+|---|---|
+| `[block1, block2, block3]` | three or more slots of one name share that prompt's top distinct boxes (NMS at IoU 0.6), ordered left to right |
+| `[bowl\|cup, plate]` | alternatives: both prompts run and the higher-scoring one is used (the container is a bowl or a cup and the instruction does not say which) |
+| `prompts_from_instruction` | the object changes every episode: its name is parsed from the episode instruction with RoboTwin's instruction templates and object description files (`data.instruction_file` points at the instructions RoboTwin's collection writes) |
 
 Any other robot follows
 `configs/example_bimanual.yaml` / `configs/example_single_arm.yaml` (HDF5 keys) or a LeRobot dataset ([below](#-your-own-dataset)).

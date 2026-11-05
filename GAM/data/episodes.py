@@ -145,6 +145,13 @@ def load_episode(path: str, cfg: dict) -> Episode:
         v = f[ik][()]
         v = v[0] if getattr(v, "shape", None) else v
         instr = v.decode() if isinstance(v, bytes) else str(v)
+    ifile = d.get("instruction_file")                            # e.g. <task>/gam_collect/instructions/{stem}.json (RoboTwin)
+    if not instr and ifile:
+        ip = ifile.format(stem=os.path.splitext(os.path.basename(path))[0])
+        if os.path.exists(ip):
+            v = json.load(open(ip))
+            v = v.get("seen") or v.get("unseen") or [""] if isinstance(v, dict) else v
+            instr = str(v[0] if isinstance(v, list) else v)
     idx = _frames_keep(path, d)
     if idx is not None:
         idx = idx[(idx >= 0) & (idx < T)]

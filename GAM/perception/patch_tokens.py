@@ -180,6 +180,13 @@ class PatchTokenExtractor:
         _no_click = (len(clicks_px) == 0) and not _text   # no clicks and no texts: run with a dummy centre click to get features / depth;
         if _no_click:   # its detection is dropped and the mask only contains the robot
             clicks_px = [(Wp / 2.0, Hp / 2.0)]
+        if _text:
+   # identical prompts run once and share that prompt's top distinct boxes, left to right;
+   # "bowl|cup" = alternatives: every alternative runs and the higher-scoring one is used
+            _uniq = list(dict.fromkeys(texts)); _group = [[i for i, t in enumerate(texts) if t == u] for u in _uniq]
+            _alts = [[a.strip() for a in u.split("|") if a.strip()] for u in _uniq]
+            texts = list(dict.fromkeys(a for al in _alts for a in al))
+            _run = [[texts.index(a) for a in al] for al in _alts]
         N = len(texts) if _text else len(clicks_px)
         self._g.pop("hid", None)
         self._dgt = dgt.expand(N, -1, -1, -1) if N > 1 else dgt
@@ -194,14 +201,10 @@ class PatchTokenExtractor:
             _dm = out[6][0].squeeze().float().cpu().numpy()
             _dm = cv2.resize(_dm, (Wp, Hp)) if _dm.shape != (Hp, Wp) else _dm
             self.last_depth = _dm[pt_:pt_ + H0, pl_:pl_ + W0] if _lb else _dm
-        for i in range(N):
-            b2, b3, sc = out[0][i], out[1][i], out[2][i]
-            if not (torch.is_tensor(sc) and sc.numel()):
-                dets.append(Detection(box2d=np.zeros(4, np.float32)))
-                continue
-            j = int(sc.argmax())
+        def _make(i, j):
+            b2, b3 = out[0][i], out[1][i]
             box2d = b2[j].float().cpu().numpy() / INPUT * [Wp, Hp, Wp, Hp] - [pl_, pt_, pl_, pt_]   # back to original-image pixels
-            d = Detection(box2d=box2d.astype(np.float32), score=float(sc[j]))
+            d = Detection(box2d=box2d.astype(np.float32), score=float(out[2][i][j]))
             if torch.is_tensor(b3) and b3.numel():
                 bv = b3[j].float().cpu().numpy()
                 c_cam, whl, quat = bv[:3], bv[3:6], bv[6:10]
@@ -215,7 +218,42 @@ class PatchTokenExtractor:
                 _perm = self.box_whl_perm
                 d.extents = whl[_perm].astype(np.float32)
                 d.R = (E[:, :3].T @ Rc).astype(np.float32)
-            dets.append(d)
+            return d
+
+        def _distinct(i, n, iou_max=0.6):
+            # top-n boxes of one prompt, greedy NMS at IoU 0.6 (the detector's multi-instance training), sorted by x
+            sc = out[2][i].float().cpu().numpy(); bx = out[0][i].float().cpu().numpy(); keep = []
+            for j in np.argsort(-sc):
+                b = bx[j]
+                ok = True
+                for k in keep:
+                    c = bx[k]; iw = max(0.0, min(b[2], c[2]) - max(b[0], c[0])); ih = max(0.0, min(b[3], c[3]) - max(b[1], c[1]))
+                    inter = iw * ih; uni = (b[2] - b[0]) * (b[3] - b[1]) + (c[2] - c[0]) * (c[3] - c[1]) - inter
+                    if uni > 0 and inter / uni > iou_max:
+                        ok = False; break
+                if ok:
+                    keep.append(int(j))
+                if len(keep) == n:
+                    break
+            return sorted(keep, key=lambda j: bx[j][0] + bx[j][2])
+
+        def _has(i):
+            return torch.is_tensor(out[2][i]) and out[2][i].numel() > 0
+
+        if not _text:
+            dets = [_make(i, int(out[2][i].argmax())) if _has(i) else Detection(box2d=np.zeros(4, np.float32)) for i in range(N)]
+        else:
+            dets = [Detection(box2d=np.zeros(4, np.float32)) for _ in range(sum(len(g) for g in _group))]
+            for u, g in enumerate(_group):
+                cand = [i for i in _run[u] if _has(i)]
+                if not cand:
+                    continue
+                i = max(cand, key=lambda r: float(out[2][r].max()))
+                if len(g) == 1:
+                    dets[g[0]] = _make(i, int(out[2][i].argmax()))
+                else:
+                    for k, j in enumerate(_distinct(i, len(g))):
+                        dets[g[k]] = _make(i, j)
 
         # 49x49 -> grid x grid pooled tokens, then the object/arm mask
         G = self.grid

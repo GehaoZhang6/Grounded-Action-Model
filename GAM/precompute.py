@@ -119,6 +119,8 @@ class FrameFeaturizer:
         self.text_mode = pc["grounding"] == "text"
         self.text_min = float(pc.get("text_score_min", 0.3))
         self.prompts = slot_prompts(self.slots) if self.text_mode else None
+        from GAM.text.instruction_prompts import build_instruction_prompts
+        self.iprompts = build_instruction_prompts(cfg) if self.text_mode else None   # data.prompts_from_instruction: per-episode prompts
         self.z_band = float(pc.get("z_band", 0.15))
         self.table_remove = bool(pc.get("table_remove", True)); self.table_margin = float(pc.get("table_margin", 0.008))   # drop the table plane from the geometry depth
         self.pick_z_band = float(pc.get("pick_z_band", 0.06 if self.sensor_depth else self.z_band))
@@ -130,6 +132,9 @@ class FrameFeaturizer:
         self.seg_proto = ep.segments is not None or self.force_segments
         self.seg_ids = ep.segments if ep.segments is not None else np.zeros(ep.T, np.int32)
         self.stab = self.frozen = None; self.prev_seg = None; self.table_z = None
+        if self.iprompts is not None:
+            self.prompts = self.iprompts(ep.instruction, self.slots, slot_prompts(self.slots))
+            assert ep.instruction, f"{ep.path}: data.prompts_from_instruction needs the episode instruction (data.instruction_file)"
         if self.seg_proto:
             from GAM.perception.box_stabilizer import BoxStabilizer
             self.stab = BoxStabilizer(); self.frozen = {}
@@ -246,6 +251,7 @@ def process_episode(ep, ext, arm_fn, cfg, out_path, featurizer=None):
                             xyz=xyz, boxgeo=boxgeo, pcd_pts=pcd_pts, pcd_mask=pcd_mask,
                             clicks=ep.clicks, image_wh=np.array([W0, H0], np.float32),
                             instruction=np.str_(ep.instruction),
+                            prompts=np.array([p or "" for p in (f.prompts or [])], dtype=str),
                             **({"lang": ep.lang_emb} if getattr(ep, "lang_emb", None) is not None else {}))
     os.replace(tmp, out_path)
 

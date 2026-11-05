@@ -1,0 +1,93 @@
+# GAM on RoboTwin 2.0, task: stack_bowls_three   (one model per task; 3 objects -> 24 detection tokens)
+# Evaluate:   python benchmarks/robotwin/eval.py --config configs/robotwin/stack_bowls_three.yaml
+# Precompute: python -m GAM.precompute --config configs/robotwin/stack_bowls_three.yaml
+# Train:      python -m GAM.train --config configs/robotwin/stack_bowls_three.yaml
+# End-to-end: python -m GAM.train --config <this file> --e2e   (no cache; perception on the fly)
+
+task: stack_bowls_three
+
+checkpoints:
+  wilddet3d: hf://gehaozhang/gam-robotwin/checkpoints/wilddet3d_robotwin.pt
+  policy: hf://gehaozhang/gam-robotwin/checkpoints/gam_policy_stack_bowls_three.pt
+
+data:
+  episodes_glob: ${ROBOTWIN_DATA:-./data/robotwin}/stack_bowls_three/gam_collect/data/episode*.hdf5
+  frames_keep_json: ${ROBOTWIN_DATA:-./data/robotwin}/frames_keep.json
+  rgb_key: observation/head_camera/rgb
+  depth_key: observation/head_camera/depth
+  depth_unit: mm
+  intrinsic_key: observation/head_camera/intrinsic_cv
+  extrinsic_key: observation/head_camera/extrinsic_cv
+  extrinsic_is_cam2base: false
+  state_key: joint_action/vector
+  action_key: joint_action/vector
+  slots: [bowl1, bowl2, bowl3]
+  clicks:
+    source: none
+  val_episodes: 0
+
+perception:                                     # must match the training cache (stored in the checkpoint)
+  grounding: text                               # every slot is detected from its text prompt on every frame
+  text_score_min: 0.3
+  detector_depth: zero                          # WildDet3D runs monocular
+  geometry_depth: pred                          # object point clouds from the detector's own depth
+  geometry_source: box3d                        # object box = the predicted 3D box
+  patch_grid: 36
+  n_points: 512
+  table_remove: true                            # drop the table plane from the geometry depth (dominant height of the back-projected points + table_margin)
+  table_margin: 0.008
+  cell_min_overlap: 0.3
+  image_channel_swap: true
+  letterbox: true
+  box_whl_perm: [0, 1, 2]
+  precision: fp32
+  deterministic: true
+  robot:
+    urdf: ${ROBOTWIN_ROOT:-./RoboTwin}/assets/embodiments/aloha-agilex/urdf/arx5_description_isaac.urdf
+    joint_names: [fl_joint1, fl_joint2, fl_joint3, fl_joint4, fl_joint5, fl_joint6, fl_joint7, fr_joint1, fr_joint2, fr_joint3, fr_joint4, fr_joint5, fr_joint6, fr_joint7]
+    T_base_root: [[-0.0, -1.0, 0.0, 0.0], [1.0, -0.0, 0.0, -0.65], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    max_faces: 1500
+    joint_affine:
+      fl_joint7: [-0.01, 0.055]
+      fr_joint7: [-0.01, 0.055]
+    joint_mirror:
+      fl_joint8: fl_joint7
+      fr_joint8: fr_joint7
+
+train:
+  cache_dir: ${GAM_CACHE:-./cache}/robotwin/stack_bowls_three   # or hf://gehaozhang/gam-robotwin/cache/stack_bowls_three/ (the released cache)
+  cache_glob: episode*[0-9].npz
+  out_dir: ${GAM_RUNS:-./runs}/robotwin/stack_bowls_three
+  horizon: 50
+  n_action_steps: 50
+  state_hist: 2
+  batch_size: 48                                # per GPU; the released experts: 4 GPUs x 48 = global batch 192
+  grad_accum: 1                                 # set 4 on one GPU (or 2 on two) to keep global batch 192
+  lr: 0.0002
+  weight_decay: 0.001
+  warmup_steps: 300
+  max_steps: 12000                              # 300 epochs over the task's cached frames at global batch 192 would exceed the 12000-step cap
+  save_every: 2000
+  snapshot_every_saves: 1
+  state_dropout: 0.2
+  det_xyz_dropout: 0.0
+  patch_dropout: 0.3
+  det_role_cam: false
+  lang_mode: none                               # none | film (T5 sentence embedding modulates every layer's adaLN)
+
+eval:
+  robotwin_root: ${ROBOTWIN_ROOT:-./RoboTwin}
+  settings: [clean, randomized]
+  episodes: 20
+  precision: bf16                               # the detector ran in bf16 for the reported numbers
+  chunking: replan
+  replan:
+    exec_steps: 15
+    seam_blend: true
+  tempens:
+    k: 0.01
+    query_every: 4
+  rtc:
+    exec_steps: 15
+    delay: 1
+  out_dir: ${GAM_RUNS:-./runs}/robotwin_eval/stack_bowls_three

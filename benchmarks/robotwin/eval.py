@@ -30,10 +30,16 @@ ROBOTWIN_COMMIT = "6e75b8b"                               # RoboTwin 2.0 commit 
 
 
 def _symlink(target, link):
-    """Create link -> target unless it exists (several evaluations may set up the same RoboTwin checkout at once)."""
+    """link -> target. Several evaluations may set up the same RoboTwin checkout at once, so an existing link to the
+    same target is kept; a link to another checkout of this repository (an older clone) is replaced atomically,
+    otherwise the simulator would import that clone's GAM."""
     try:
         os.symlink(target, link); return True
     except FileExistsError:
+        if os.path.islink(link) and os.path.realpath(link) != os.path.realpath(target):
+            tmp = f"{link}.{os.getpid()}.tmp"
+            os.symlink(target, tmp); os.replace(tmp, link)
+            print(f"[setup] {link} pointed to another checkout, now -> {target}", flush=True); return True
         return False
 
 
