@@ -55,7 +55,7 @@ perception:                                     # must match the training cache 
       fr_joint8: fr_joint7
 
 train:
-  cache_dir: ${GAM_CACHE:-./cache}/robotwin/pick_dual_bottles   # or hf://gehaozhang/gam-robotwin/cache/pick_dual_bottles/ (the released cache)
+  cache_dir: ${GAM_CACHE:-./cache}/robotwin/pick_dual_bottles
   cache_glob: episode*[0-9].npz
   out_dir: ${GAM_RUNS:-./runs}/robotwin/pick_dual_bottles
   horizon: 50

@@ -2,7 +2,7 @@
 is downloaded from the Hugging Face Hub (cached under HF_HOME) on first use.
 
     fetch("hf://gehaozhang/gam-libero-pro/checkpoints/gam_policy_libero_pro.pt")  -> local file
-    fetch("hf://gehaozhang/gam-robotwin/cache/handover_block/")                   -> local directory
+    fetch("hf://gehaozhang/gam-libero-pro/cache/")                                -> local directory
     fetch("hf://datasets/gehaozhang/gam-libero-pro-assets/")                      -> a dataset repo
 """
 from __future__ import annotations

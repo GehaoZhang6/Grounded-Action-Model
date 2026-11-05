@@ -56,7 +56,7 @@ perception:                                     # must match the training cache 
       fr_joint8: fr_joint7
 
 train:
-  cache_dir: ${GAM_CACHE:-./cache}/robotwin/stack_blocks_two   # or hf://gehaozhang/gam-robotwin/cache/stack_blocks_two/ (the released cache)
+  cache_dir: ${GAM_CACHE:-./cache}/robotwin/stack_blocks_two
   cache_glob: episode*[0-9].npz
   out_dir: ${GAM_RUNS:-./runs}/robotwin/stack_blocks_two
   horizon: 50

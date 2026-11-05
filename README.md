@@ -86,7 +86,7 @@ action chunks from those grounded observations, the robot's own silhouette and i
 
 | Benchmark | Checkpoint | Trained on |
 |---|---|---|
-| RoboTwin 2.0 | [`gam-robotwin`](https://huggingface.co/gehaozhang/gam-robotwin) | 50 clean demonstrations per task (one expert per task) + the RoboTwin-tuned detector and training caches, all 50 tasks |
+| RoboTwin 2.0 | [`gam-robotwin`](https://huggingface.co/gehaozhang/gam-robotwin) | 50 clean demonstrations per task (one expert per task) + the RoboTwin-tuned detector, all 50 tasks |
 | LIBERO-PRO | [`gam-libero-pro`](https://huggingface.co/gehaozhang/gam-libero-pro) | all four LIBERO suites, 50 demonstrations per task (one policy) + the LIBERO-tuned detector, span head and training cache |
 | Your own dataset | [`gam-wilddet3d`](https://huggingface.co/gehaozhang/gam-wilddet3d) | the general WildDet3D detector and the universal span head |
 
@@ -173,7 +173,6 @@ and they train as downloaded):
 
 | Benchmark | `train.cache_dir` | Size |
 |---|---|---|
-| RoboTwin 2.0 | [`hf://gehaozhang/gam-robotwin/cache/<task>/`](https://huggingface.co/gehaozhang/gam-robotwin/tree/main/cache) | 1-6 GB per task |
 | LIBERO-PRO | [`hf://gehaozhang/gam-libero-pro/cache/`](https://huggingface.co/gehaozhang/gam-libero-pro/tree/main/cache) | 11 GB (2000 demonstrations) |
 
 Or precompute your own. LIBERO demonstrations are replayed in the simulator by `benchmarks/libero_pro/precompute.py`
@@ -189,8 +188,8 @@ python benchmarks/robotwin/prepare_data.py --data $ROBOTWIN_DATA              # 
 python -m GAM.precompute --config configs/robotwin/shake_bottle.yaml
 ```
 
-Every RoboTwin 2.0 task has a config in `configs/robotwin/` (50 tasks). Each comes with a released checkpoint and
-cache; to train your own, collect, prepare, precompute and train as above. Each slot is found by a text
+Every RoboTwin 2.0 task has a config in `configs/robotwin/` (50 tasks). Each comes with a released checkpoint
+(RoboTwin training caches are not released); to train your own, collect, prepare, precompute and train as above. Each slot is found by a text
 prompt made from its name (`bowl1` / `bowl2` become "left bowl" / "right bowl", `target_box` becomes "target box"), with
 three conventions for the tasks that need them:
 

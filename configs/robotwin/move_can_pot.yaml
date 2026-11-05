@@ -55,7 +55,7 @@ perception:                                     # must match the training cache 
       fr_joint8: fr_joint7
 
 train:
-  cache_dir: ${GAM_CACHE:-./cache}/robotwin/move_can_pot   # or hf://gehaozhang/gam-robotwin/cache/move_can_pot/ (the released cache)
+  cache_dir: ${GAM_CACHE:-./cache}/robotwin/move_can_pot
   cache_glob: episode*[0-9].npz
   out_dir: ${GAM_RUNS:-./runs}/robotwin/move_can_pot
   horizon: 50

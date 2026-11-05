@@ -55,7 +55,7 @@ perception:                                     # must match the training cache 
       fr_joint8: fr_joint7
 
 train:
-  cache_dir: ${GAM_CACHE:-./cache}/robotwin/place_mouse_pad   # or hf://gehaozhang/gam-robotwin/cache/place_mouse_pad/ (the released cache)
+  cache_dir: ${GAM_CACHE:-./cache}/robotwin/place_mouse_pad
   cache_glob: episode*[0-9].npz
   out_dir: ${GAM_RUNS:-./runs}/robotwin/place_mouse_pad
   horizon: 50
